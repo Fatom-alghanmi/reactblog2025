@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
-function PostList() 
+function PostList()
 {
     const [posts, setPosts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -17,50 +17,67 @@ function PostList()
             try {
                 const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/posts.php?page=${currentPage}`);
                 setPosts(response.data.posts);
-                setTotalPosts(response.data.total);
-                setIsLoading(false); 
-                    
-            }
-            catch (error) {
-                console.error(error);
-                setError('Failed to fetch posts. Please try again later.');
+                setTotalPosts(response.data.totalPosts);
                 setIsLoading(false);
             }
-        };
-        fetchPosts();
+            catch(error) {
+                console.error(error);
+                setError('Failed to load posts.');
+                setIsLoading(false);
+            }
+         };
+         fetchPosts();
     }, [currentPage]);
 
     const totalPages = Math.ceil(totalPosts / postsPerPage);
-    const goToPerviousPage = () => setCurrentPage(currentPage - 1);
+    const goToPreviousPage = () => setCurrentPage(currentPage - 1);
     const goToNextPage = () => setCurrentPage(currentPage + 1);
 
     return (
         <div className="container mt-5">
-            <h2 className="mb-4">All Post</h2>
-            {error && <div className="alert alert-danger" role="alert">{error}</div>}
+            <h2 className="mb-4">All Posts</h2>
+            {error && <div className="alert alert-danger">{error}</div>}
             <div className="row">
                 {isLoading ? (
                     <p>Loading posts...</p>
-
                 ) : posts.length ? (
                     posts.map(post => (
                         <div className="col-md-6" key={post.id}>
                             <div className="card mb-4">
                                 <div className="card-body">
                                     <h5 className="card-title">{post.title}</h5>
-                                    <p className="card-text">By {post.author} on {new Date(post.publish_date).toLocaleDateString()}</p>
+                                    <p className="card-text">By {post.author} on { new Date(post.publish_date).toLocaleDateString()}</p>
                                     <Link to={`/post/${post.id}`} className="btn btn-primary">Read More</Link>
                                 </div>
                             </div>
                         </div>
-                    ))
+
+                    )) 
                 ) : (
                     <p>No posts available.</p>
                 )}
-                </div>
-                {/* Pagination Code */}
+            </div>
+
+            {/* Pagination Code */}
+            <nav aria-label="Page navigation">
+                <ul className="pagination">
+                    <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                        <button className="page-link" onClick={goToPreviousPage}>Previous</button>
+                    </li>
+                    {Array.from({ length: totalPages }, (_, index) => (
+                        <li key={index} className={`page-item ${index + 1 === currentPage ? 'active' : ''}`}>
+                            <button className="page-link" onClick={() => setCurrentPage(index + 1)}>{index + 1}</button>
+                        </li>
+                    ))}
+                    <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                        <button className="page-link" onClick={goToNextPage}>Next</button>
+                    </li>
+                </ul>
+            </nav>
+
         </div>
     );
+
 }
 
 export default PostList;
