@@ -1,5 +1,6 @@
 <?php
-
+ header("Content-Type: application/json");
+ header("Access-Control-Allow-Origin: http://localhost:3000");
    // Load configuration files
    require_once('../config/config.php');
    require_once('../config/database.php');
@@ -33,7 +34,8 @@
                 'author' => $post['author'],
                 'date' => date("l jS \of F Y", strtotime($post['publish_date'])),
                 'likes' => $post['numLikes'],
-                'dislikes' => $post['numDislikes']
+                'dislikes' => $post['numDislikes'],
+                'imageName' => $post['imageName'] ?? null
             ]
         ];
 

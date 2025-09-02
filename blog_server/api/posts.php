@@ -1,6 +1,7 @@
 <?php
    header("Content-Type: application/json");
-   
+   header("Access-Control-Allow-Origin: http://localhost:3000");
+
    // Load configuration files
    require_once('../config/config.php');
    require_once('../config/database.php');

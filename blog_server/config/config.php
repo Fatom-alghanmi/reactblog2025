@@ -1,25 +1,16 @@
 <?php
-// Define configuration options
-$allowedOrigins = ['http://localhost:3000'];
-$allowedHeaders = ['Content-Type'];
-$allowedMethods = ['GET', 'POST', 'OPTIONS'];
+// Database configuration
+$dbHost = "localhost";
+$dbUsername = "root";
+$dbPassword = "";
+$dbName = "simple_blog_db";
 
-// Set headers for CORS
-$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
-if (in_array($origin, $allowedOrigins)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
+// Create database connection
+$conn = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName);
+
+// Check connection
+if ($conn->connect_error)
+{
+    die("Connection failed: " . $conn->connect_error);
 }
-
-if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
-    header('Access-Control-Allow-Methods: ' . implode(', ', $allowedMethods));
-}
-
-if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
-    $requestHeaders = explode(',', $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']);
-    $requestHeaders = array_map('trim', $requestHeaders); // Trim whitespace from headers
-    if (count(array_intersect($requestHeaders, $allowedHeaders)) == count($requestHeaders)) {
-        header('Access-Control-Allow-Headers: ' . implode(', ', $allowedHeaders));
-    }
-}
-
 ?>
