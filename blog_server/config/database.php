@@ -1,4 +1,5 @@
 <?php
+
 // Database configuration
 $dbHost = "localhost";
 $dbUsername = "root";
@@ -9,8 +10,7 @@ $dbName = "simple_blog_db";
 $conn = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName);
 
 // Check connection
-if ($conn->connect_error)
-{
+if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 ?>

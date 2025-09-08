@@ -1,24 +1,35 @@
 <?php
+session_start();
 
-header("Access-Control-Allow-Origin: *");  // Or your frontend domain
+// CORS headers for frontend
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
+// Include DB
 require_once('../config/config.php');
 require_once('../config/database.php');
 
-// Handle preflight OPTIONS request
+// Require login
+if (!isset($_SESSION['user'])) {
+    http_response_code(401);
+    echo json_encode(["success" => false, "message" => "Unauthorized"]);
+    exit;
+}
+
+// Handle preflight OPTIONS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Validate required POST fields
+// Check required fields
 if (!isset($_POST['title'], $_POST['content'], $_POST['author'])) {
     http_response_code(400);
     echo json_encode(['message' => 'Missing required fields']);
-    exit();
+    exit;
 }
 
 // Sanitize input
@@ -26,47 +37,47 @@ $title = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
 $content = filter_var($_POST['content'], FILTER_SANITIZE_STRING);
 $author = filter_var($_POST['author'], FILTER_SANITIZE_STRING);
 
-// Handle image upload if exists
+// Image upload handling
 $uploadDir = __DIR__ . "/uploads/";
-$imageName = "placeholder_100.jpg"; // default
+$imageName = 'placeholder_100.jpg'; // default placeholder
 
 if (!empty($_FILES['image']['name'])) {
-    $originalName = basename($_FILES['image']['name']);
-    $targetFilePath = $uploadDir . $originalName;
+    $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+    $imageName = 'img_' . uniqid() . '.' . $ext;
+    $targetFile = $uploadDir . $imageName;
 
-    // Check if file already exists
-    if (file_exists($targetFilePath)) {
-        http_response_code(400);
-        echo json_encode(['message' => 'File already exists: ' . $originalName]);
-        exit();
-    }
-
-    if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetFilePath)) {
+    if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
         http_response_code(500);
-        echo json_encode([
-            'message' => 'Error uploading file',
-            'php_error' => $_FILES['image']['error']
-        ]);
-        exit();
+        echo json_encode(['message' => 'Error uploading file']);
+        exit;
     }
-
-    $imageName = $originalName; // overwrite default with uploaded file name
 }
 
-// Insert into database
-$stmt = $conn->prepare('INSERT INTO blog_posts (title, content, author, imageName) VALUES (?, ?, ?, ?)');
-$stmt->bind_param('ssss', $title, $content, $author, $imageName);
+// Insert post into database
+$stmt = $conn->prepare("INSERT INTO blog_posts (title, content, author, imageName) VALUES (?, ?, ?, ?)");
+$stmt->bind_param("ssss", $title, $content, $author, $imageName);
 
 if ($stmt->execute()) {
-    $id = $stmt->insert_id;
-    http_response_code(201);
-    echo json_encode(['message' => 'Post created successfully', 'id' => $id, 'imageName' => $imageName]);
+    $postId = $stmt->insert_id;
+
+    // Respond with full post data including image URL
+    echo json_encode([
+        'success' => true,
+        'message' => 'Post created successfully',
+        'post' => [
+            'id' => $postId,
+            'title' => $title,
+            'content' => $content,
+            'author' => $author,
+            'imageUrl' => "http://localhost/reactblog2025/blog_server/uploads/" . $imageName
+        ]
+    ]);
 } else {
     http_response_code(500);
-    echo json_encode(['message' => 'Error creating post: ' . $stmt->error]);
+    echo json_encode(['success' => false, 'message' => $stmt->error]);
 }
 
+// Close connections
 $stmt->close();
 $conn->close();
-
 ?>

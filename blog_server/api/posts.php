@@ -1,65 +1,50 @@
 <?php
-   header("Content-Type: application/json");
-   header("Access-Control-Allow-Origin: http://localhost:3000");
+session_start();
 
-   // Load configuration files
-   require_once('../config/config.php');
-   require_once('../config/database.php');
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json");
 
-   // Define configuration options
-   $allowedMethods = ['GET'];
-   $maxPostsPerPage = 4;
+require_once('../config/config.php');
+require_once('../config/database.php');
 
-   // Implement basic pagination
-   $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-   $offset = ($page - 1) * $maxPostsPerPage;
+// Require login
+if (!isset($_SESSION['user'])) {
+    http_response_code(401);
+    echo json_encode(["success" => false, "message" => "Unauthorized"]);
+    exit;
+}
 
-   // Query to count total posts
-   $countQuery = "SELECT COUNT(*) AS totalPosts FROM blog_posts";
-   $countResult = mysqli_query($conn, $countQuery);
-   $countRow = mysqli_fetch_assoc($countResult);
-   $totalPosts = $countRow['totalPosts'];
+// Pagination
+$maxPostsPerPage = 4;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $maxPostsPerPage;
 
-   // check if total posts query is successful
-   if (!$countResult)
-   {
-    http_response_code(500); // internal server error
-    echo json_encode(['message' => 'Error querying database for total
-        posts count: ' . mysqli_error($conn)]);
-    mysqli_close($conn);
-    exit();
-   }
+// Total posts
+$countResult = mysqli_query($conn, "SELECT COUNT(*) as total FROM blog_posts");
+$countRow = mysqli_fetch_assoc($countResult);
+$totalPosts = $countRow['total'];
 
-   // query to get all blog posts with pagination and ordering
-   $query = "SELECT * FROM blog_posts ORDER BY publish_date DESC LIMIT $offset, $maxPostsPerPage";
-   $result = mysqli_query($conn, $query);
+// Fetch posts
+$query = "SELECT * FROM blog_posts ORDER BY publish_date DESC LIMIT $offset, $maxPostsPerPage";
+$result = mysqli_query($conn, $query);
+$posts = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-   // check if get all blog posts query is successful
-   if (!$result)
-   {
-    http_response_code(500); // internal server error
-    echo json_encode(['message' => 'Error querying database for paginated
-        posts: ' . mysqli_error($conn)]);
-    mysqli_close($conn);
-    exit();
-   }
+// Add full image URL for each post
+foreach ($posts as &$post) {
+    $post['imageUrl'] = $post['imageName'] 
+        ? "http://localhost/reactblog2025/blog_server/uploads/" . $post['imageName'] 
+        : "http://localhost/reactblog2025/blog_server/uploads/placeholder_100.jpg";
+}
 
-   // convert query result into an associative array
-   $posts = mysqli_fetch_all($result, MYSQLI_ASSOC);
+// Response
+echo json_encode([
+    'success' => true,
+    'posts' => $posts,
+    'totalPosts' => $totalPosts
+]);
 
-   // check if there are posts
-   if (empty($posts))
-   {
-    http_response_code(404); // not found error
-    echo json_encode(['message' => 'No posts found', 'totalPosts' => $totalPosts]); 
-   }
-   else
-   {
-    // return JSON response including totalPosts
-    echo json_encode(['posts' => $posts, 'totalPosts' => $totalPosts]); 
-   }
-
-   // close database connection
-   mysqli_close($conn);
-
+mysqli_close($conn);
 ?>

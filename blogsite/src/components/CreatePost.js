@@ -26,22 +26,25 @@ function CreatePost() {
         event.preventDefault();
         setError('');
         if (!validateForm()) return;
-
+    
         setIsLoading(true);
-
+    
         try {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
             formData.append('author', author);
             if (image) formData.append('image', image);
-
+    
             const response = await axios.post(
                 `${process.env.REACT_APP_API_BASE_URL}/create-post.php`,
                 formData,
-                { headers: { 'Content-Type': 'multipart/form-data' } }
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    withCredentials: true   // ✅ this makes sure cookies/session are sent
+                }
             );
-
+    
             console.log(response.data);
             navigate('/');
         } catch (err) {
@@ -50,8 +53,8 @@ function CreatePost() {
         } finally {
             setIsLoading(false);
         }
-    }
-
+    };
+    
     return (
         <div className="container mt-4">
             <h2>Create a New Post</h2>

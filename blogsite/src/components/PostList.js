@@ -15,7 +15,8 @@ function PostList()
         const fetchPosts = async () => {
             setIsLoading(true);
             try {
-                const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/posts.php?page=${currentPage}`);
+                const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/posts.php?page=${currentPage}`,
+                     { withCredentials: true });
                 setPosts(response.data.posts);
                 setTotalPosts(response.data.totalPosts);
                 setIsLoading(false);
@@ -47,7 +48,8 @@ function PostList()
                                 <div className="card-body">
                                     <h5 className="card-title">{post.title}</h5>
                                     <p className="card-text">By {post.author} on { new Date(post.publish_date).toLocaleDateString()}</p>
-                                    <Link to={`/post/${post.id}`} className="btn btn-primary">Read More</Link>
+                                    <Link to={`/post/${post.id}`} className="btn btn-primary me-2">Read More</Link>
+                                    <Link to={`/edit/${post.id}`} className="btn btn-secondary">Edit</Link>
                                 </div>
                             </div>
                         </div>
